@@ -1,29 +1,58 @@
 document.addEventListener('DOMContentLoaded', () => {
     loadTasks();
-    updatePoints();
-    loadAchievements();
+    loadGoals();
+    showDay(0); // Default to Monday
 });
 
-let points = parseInt(localStorage.getItem('points')) || 0;
-const achievements = [
-    { name: "Dark Mode", points: 10, unlocked: false, apply: () => document.body.classList.add('dark-mode') },
-    { name: "Task Master", points: 25, unlocked: false, apply: () => alert("You're a Task Master!") },
-    { name: "Confetti Celebration", points: 50, unlocked: false, apply: triggerConfetti }
+let currentDay = 0;
+
+const defaultGoals = [
+    "Daily devotional",
+    "Read Wall Street Journal or Financial Times",
+    "Take 5 grams creatine or more",
+    "Get sunlight in first hour of day (5 min sunny, 10 min+ otherwise)",
+    "Set my to-do list for today",
+    "Morning + afternoon vitamins",
+    "Work out or outdoor activity",
+    "Evening vitamins",
+    "Pray/meditate 5 minutes",
+    "Journal",
+    "Read 10 pages in book",
+    "Eat healthy",
+    "Limit screen time",
+    "Daily walk",
+    "Duolingo German"
 ];
+
+function getPersonalGoals() {
+    return JSON.parse(localStorage.getItem('personalGoals')) || defaultGoals;
+}
 
 function addTask() {
     const taskInput = document.getElementById('taskInput');
+    const taskDate = document.getElementById('taskDate').value;
+    const taskNotes = document.getElementById('taskNotes').value.trim();
     const taskText = taskInput.value.trim();
 
-    if (taskText === '') {
-        alert('Please enter a task!');
+    if (taskText === '' || !taskDate) {
+        alert('Please enter a task and select a date!');
         return;
     }
 
-    const task = { id: Date.now(), text: taskText, completed: false };
+    const date = new Date(taskDate);
+    const task = {
+        id: Date.now(),
+        text: taskText,
+        date: date.toISOString(),
+        notes: taskNotes,
+        completed: false
+    };
+
     saveTask(task);
-    displayTask(task);
+    if (getDayOfWeek(date) === currentDay) displayTask(task);
     taskInput.value = '';
+    document.getElementById('taskDate').value = '';
+    document.getElementById('taskNotes').value = '';
 }
 
 function displayTask(task) {
@@ -36,7 +65,15 @@ function displayTask(task) {
     checkbox.addEventListener('change', () => toggleComplete(task.id, checkbox.checked));
 
     const span = document.createElement('span');
-    span.textContent = task.text;
+    const date = new Date(task.date);
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][getDayOfWeek(date)];
+    span.textContent = `${task.text} (${dayName}, ${date.toLocaleDateString()})`;
+    if (task.notes) {
+        const notesSpan = document.createElement('span');
+        notesSpan.className = 'notes';
+        notesSpan.textContent = `Notes: ${task.notes}`;
+        span.appendChild(notesSpan);
+    }
 
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = 'Delete';
@@ -58,7 +95,7 @@ function saveTask(task) {
 
 function loadTasks() {
     const tasks = getTasks();
-    tasks.forEach(displayTask);
+    tasks.filter(task => getDayOfWeek(new Date(task.date)) === currentDay).forEach(displayTask);
 }
 
 function getTasks() {
@@ -68,15 +105,7 @@ function getTasks() {
 function toggleComplete(id, isChecked) {
     let tasks = getTasks();
     tasks = tasks.map(task => {
-        if (task.id === id) {
-            task.completed = isChecked;
-            if (isChecked) {
-                points += 1;
-                if (tasks.every(t => t.completed)) points += 5; // Bonus for all tasks done
-                updatePoints();
-                checkAchievements();
-            }
-        }
+        if (task.id === id) task.completed = isChecked;
         return task;
     });
     localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -96,48 +125,87 @@ function refreshTaskList() {
     loadTasks();
 }
 
-function updatePoints() {
-    localStorage.setItem('points', points);
-    document.getElementById('points').textContent = points;
-}
-
-function checkAchievements() {
-    let updated = false;
-    achievements.forEach(ach => {
-        if (!ach.unlocked && points >= ach.points) {
-            ach.unlocked = true;
-            ach.apply();
-            updated = true;
-            alert(`Achievement Unlocked: ${ach.name}!`);
-        }
+function showDay(dayIndex) {
+    currentDay = dayIndex;
+    document.querySelectorAll('.tab').forEach((tab, i) => {
+        tab.classList.toggle('active', i === dayIndex);
     });
-    if (updated) loadAchievements();
-    localStorage.setItem('achievements', JSON.stringify(achievements));
+    refreshTaskList();
 }
 
-function loadAchievements() {
-    const savedAchievements = JSON.parse(localStorage.getItem('achievements')) || achievements;
-    achievements.forEach((ach, i) => savedAchievements[i] && (ach.unlocked = savedAchievements[i].unlocked));
-    const list = document.getElementById('achievementsList');
-    list.innerHTML = '';
-    achievements.forEach(ach => {
+function getDayOfWeek(date) {
+    return (date.getDay() + 6) % 7; // Monday = 0, Sunday = 6
+}
+
+function loadGoals() {
+    const goalsList = document.getElementById('goalsList');
+    const today = new Date().toDateString();
+    let goalProgress = JSON.parse(localStorage.getItem('goalProgress')) || {};
+    const personalGoals = getPersonalGoals();
+
+    if (goalProgress.date !== today || goalProgress.completed?.length !== personalGoals.length) {
+        goalProgress = { date: today, completed: new Array(personalGoals.length).fill(false) };
+    }
+
+    goalsList.innerHTML = ''; // Clear the list
+
+    const goalsWithStatus = personalGoals.map((goal, index) => ({
+        text: goal,
+        completed: goalProgress.completed[index],
+        index: index
+    }));
+
+    goalsWithStatus.sort((a, b) => a.completed - b.completed);
+
+    goalsWithStatus.forEach(goal => {
         const li = document.createElement('li');
-        li.textContent = `${ach.name} (${ach.points} points) - ${ach.unlocked ? 'Unlocked' : 'Locked'}`;
-        list.appendChild(li);
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = goal.completed;
+        checkbox.addEventListener('change', () => {
+            goalProgress.completed[goal.index] = checkbox.checked;
+            localStorage.setItem('goalProgress', JSON.stringify(goalProgress));
+            loadGoals();
+        });
+
+        const span = document.createElement('span');
+        span.textContent = goal.text;
+
+        li.appendChild(checkbox);
+        li.appendChild(span);
+        if (goal.completed) li.classList.add('completed');
+        goalsList.appendChild(li);
     });
-    document.querySelectorAll('.dark-mode').forEach(el => el.classList.remove('dark-mode'));
-    achievements.filter(ach => ach.unlocked && ach.name === "Dark Mode").forEach(ach => ach.apply());
+
+    localStorage.setItem('goalProgress', JSON.stringify(goalProgress));
 }
 
-document.getElementById('achievementsBtn').addEventListener('click', () => {
-    document.getElementById('achievementsModal').style.display = 'flex';
-});
+function toggleEditGoals() {
+    const editForm = document.getElementById('editGoalsForm');
+    const goalsInput = document.getElementById('goalsInput');
+    const isVisible = editForm.style.display === 'block';
 
-function closeModal() {
-    document.getElementById('achievementsModal').style.display = 'none';
+    if (!isVisible) {
+        const personalGoals = getPersonalGoals();
+        goalsInput.value = personalGoals.join('\n');
+        editForm.style.display = 'block';
+        document.getElementById('editGoalsBtn').textContent = 'Editing...';
+    } else {
+        editForm.style.display = 'none';
+        document.getElementById('editGoalsBtn').textContent = 'Edit Goals';
+    }
 }
 
-function triggerConfetti() {
-    alert("Confetti time! (Imagine it raining down!)");
-    // Optionally integrate a library like 'canvas-confetti' for real effects
+function saveGoals() {
+    const goalsInput = document.getElementById('goalsInput').value;
+    const newGoals = goalsInput.split('\n').map(goal => goal.trim()).filter(goal => goal !== '');
+    
+    if (newGoals.length === 0) {
+        alert('Please enter at least one goal!');
+        return;
+    }
+
+    localStorage.setItem('personalGoals', JSON.stringify(newGoals));
+    toggleEditGoals();
+    loadGoals(); // Reload with new goals
 }

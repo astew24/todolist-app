@@ -11,17 +11,11 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: background 0.3s;
-}
-
-body.dark-mode {
-    background: linear-gradient(135deg, #1f1c2c, #928dab);
-    color: #fff;
 }
 
 .container {
     width: 90%;
-    max-width: 500px;
+    max-width: 700px;
     background: #fff;
     padding: 20px;
     border-radius: 15px;
@@ -30,9 +24,7 @@ body.dark-mode {
 }
 
 header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    text-align: center;
     margin-bottom: 20px;
 }
 
@@ -41,42 +33,26 @@ h1 {
     color: #333;
 }
 
-body.dark-mode h1 {
-    color: #fff;
+h2 {
+    font-size: 22px;
+    color: #555;
+    margin-bottom: 15px;
 }
 
-.stats {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-}
-
-.stats span {
-    font-size: 16px;
-    color: #666;
-}
-
-body.dark-mode .stats span {
-    color: #ddd;
-}
-
-#achievementsBtn {
-    padding: 5px 10px;
-    background: #6c63ff;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+.todo-section, .goals-section {
+    margin-bottom: 30px;
 }
 
 .input-section {
     display: flex;
+    flex-direction: column;
     gap: 10px;
     margin-bottom: 20px;
 }
 
-input {
-    flex: 1;
+input[type="text"],
+input[type="date"],
+textarea {
     padding: 12px;
     font-size: 16px;
     border: 2px solid #ddd;
@@ -85,7 +61,16 @@ input {
     transition: border-color 0.3s;
 }
 
-input:focus {
+input[type="text"] {
+    width: 100%;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+input:focus, textarea:focus {
     border-color: #6c63ff;
 }
 
@@ -103,24 +88,37 @@ button:hover {
     background: #5548d9;
 }
 
+.tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.tab {
+    padding: 8px 15px;
+    background: #ddd;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.tab.active {
+    background: #6c63ff;
+    color: #fff;
+}
+
 ul {
     list-style: none;
 }
 
 li {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     background: #f9f9f9;
     padding: 15px;
     margin-bottom: 10px;
     border-radius: 10px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s;
-}
-
-body.dark-mode li {
-    background: #2c2a4a;
-    color: #fff;
 }
 
 li:hover {
@@ -133,16 +131,20 @@ li.completed {
     color: #888;
 }
 
-body.dark-mode li.completed {
-    background: #3d8057;
-}
-
 li input[type="checkbox"] {
     margin-right: 15px;
 }
 
 li span {
     flex: 1;
+}
+
+li span.notes {
+    display: block;
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+    font-style: italic;
 }
 
 li button {
@@ -154,42 +156,35 @@ li button:hover {
     background: #e63939;
 }
 
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    justify-content: center;
-    align-items: center;
+/* Goal-specific styles */
+#goalsList li.completed {
+    background: #f0f0f0;
+    opacity: 0.7;
+    text-decoration: line-through;
 }
 
-.modal-content {
-    background: #fff;
-    padding: 20px;
-    border-radius: 15px;
-    width: 90%;
-    max-width: 400px;
-    text-align: center;
+/* Edit form styles */
+.edit-form {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
-body.dark-mode .modal-content {
-    background: #2c2a4a;
-    color: #fff;
+.edit-form textarea {
+    min-height: 150px;
 }
 
-.modal-content h2 {
-    margin-bottom: 20px;
+.edit-form button {
+    padding: 10px;
 }
 
-.modal-content ul {
-    text-align: left;
-    margin-bottom: 20px;
+#editGoalsBtn {
+    padding: 8px 15px;
+    background: #ddd;
+    color: #333;
 }
 
-.modal-content button {
-    background: #6c63ff;
+#editGoalsBtn:hover {
+    background: #bbb;
 }
