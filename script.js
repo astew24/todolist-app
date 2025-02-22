@@ -30,28 +30,26 @@ function getPersonalGoals() {
 
 function addTask() {
     const taskInput = document.getElementById('taskInput');
-    const taskDate = document.getElementById('taskDate').value;
+    const taskDay = parseInt(document.getElementById('taskDay').value);
     const taskNotes = document.getElementById('taskNotes').value.trim();
     const taskText = taskInput.value.trim();
 
-    if (taskText === '' || !taskDate) {
-        alert('Please enter a task and select a date!');
+    if (taskText === '') {
+        alert('Please enter a task!');
         return;
     }
 
-    const date = new Date(taskDate);
     const task = {
         id: Date.now(),
         text: taskText,
-        date: date.toISOString(),
+        day: taskDay,
         notes: taskNotes,
         completed: false
     };
 
     saveTask(task);
-    if (getDayOfWeek(date) === currentDay) displayTask(task);
+    if (task.day === currentDay) displayTask(task);
     taskInput.value = '';
-    document.getElementById('taskDate').value = '';
     document.getElementById('taskNotes').value = '';
 }
 
@@ -65,9 +63,12 @@ function displayTask(task) {
     checkbox.addEventListener('change', () => toggleComplete(task.id, checkbox.checked));
 
     const span = document.createElement('span');
-    const date = new Date(task.date);
-    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][getDayOfWeek(date)];
-    span.textContent = `${task.text} (${dayName}, ${date.toLocaleDateString()})`;
+    if (currentDay === -1) {
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        span.textContent = `${task.text} (${dayNames[task.day]})`;
+    } else {
+        span.textContent = task.text;
+    }
     if (task.notes) {
         const notesSpan = document.createElement('span');
         notesSpan.className = 'notes';
@@ -95,7 +96,13 @@ function saveTask(task) {
 
 function loadTasks() {
     const tasks = getTasks();
-    tasks.filter(task => getDayOfWeek(new Date(task.date)) === currentDay).forEach(displayTask);
+    let filteredTasks;
+    if (currentDay === -1) {
+        filteredTasks = tasks.filter(task => task.completed);
+    } else {
+        filteredTasks = tasks.filter(task => task.day === currentDay && !task.completed);
+    }
+    filteredTasks.forEach(displayTask);
 }
 
 function getTasks() {
@@ -127,14 +134,16 @@ function refreshTaskList() {
 
 function showDay(dayIndex) {
     currentDay = dayIndex;
-    document.querySelectorAll('.tab').forEach((tab, i) => {
-        tab.classList.toggle('active', i === dayIndex);
-    });
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab')[dayIndex].classList.add('active');
     refreshTaskList();
 }
 
-function getDayOfWeek(date) {
-    return (date.getDay() + 6) % 7; // Monday = 0, Sunday = 6
+function showCompleted() {
+    currentDay = -1;
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelector('.tab:last-child').classList.add('active');
+    refreshTaskList();
 }
 
 function loadGoals() {
