@@ -63,12 +63,7 @@ function displayTask(task) {
     checkbox.addEventListener('change', () => toggleComplete(task.id, checkbox.checked));
 
     const span = document.createElement('span');
-    if (currentDay === -1) {
-        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        span.textContent = `${task.text} (${dayNames[task.day]})`;
-    } else {
-        span.textContent = task.text;
-    }
+    span.textContent = task.text;
     if (task.notes) {
         const notesSpan = document.createElement('span');
         notesSpan.className = 'notes';
@@ -96,12 +91,8 @@ function saveTask(task) {
 
 function loadTasks() {
     const tasks = getTasks();
-    let filteredTasks;
-    if (currentDay === -1) {
-        filteredTasks = tasks.filter(task => task.completed);
-    } else {
-        filteredTasks = tasks.filter(task => task.day === currentDay && !task.completed);
-    }
+    const filteredTasks = tasks.filter(task => task.day === currentDay);
+    filteredTasks.sort((a, b) => a.completed - b.completed);
     filteredTasks.forEach(displayTask);
 }
 
@@ -134,15 +125,10 @@ function refreshTaskList() {
 
 function showDay(dayIndex) {
     currentDay = dayIndex;
-    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.tab')[dayIndex].classList.add('active');
-    refreshTaskList();
-}
-
-function showCompleted() {
-    currentDay = -1;
-    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-    document.querySelector('.tab:last-child').classList.add('active');
+    
+    document.querySelectorAll('.tab').forEach((tab, i) => {
+        tab.classList.toggle('active', i === dayIndex);
+    });
     refreshTaskList();
 }
 
